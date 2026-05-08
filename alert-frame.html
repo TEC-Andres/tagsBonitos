@@ -3,46 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alert Component</title>
+  <title>Alert Component with MathJax</title>
+  
   <style>
     /* Reset margins so it fits perfectly in the iframe */
-    body { margin: 0; font-family: sans-serif; overflow: hidden; background: transparent; }
+    body { 
+      margin: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: transparent; 
+    }
+    
+    .alert-container {
+      border-left: 4px solid #ff9800;
+      background: #fff8e1;
+      padding: 16px;
+      border-radius: 6px;
+      display: flex;
+      gap: 12px;
+      /* align-items: flex-start ensures the icon stays at the top for long multi-line texts */
+      align-items: flex-start; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .alert-icon {
+      flex: 0 0 20px;
+      margin-top: 2px;
+    }
+
+    .alert-content {
+      flex: 1;
+      min-width: 0; /* Prevents flexbox from overflowing on long unbroken strings */
+    }
+
+    .alert-title {
+      display: block;
+      color: #5a3b00;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .alert-text {
+      margin: 0;
+      color: #5b4630;
+      line-height: 1.6; /* Increased line-height for cleaner reading of long texts */
+      overflow-wrap: break-word; /* Prevents long URLs or formulas from breaking the layout */
+    }
   </style>
+
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
 </head>
 <body>
 
-  <div role="alert" aria-label="Warning" style="border-left:4px solid #ff9800;background:#fff8e1;padding:12px;border-radius:6px;display:flex;gap:12px;align-items:flex-start;">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex:0 0 20px;margin-top:2px;">
+  <div class="alert-container" role="alert" aria-label="Warning">
+    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 2L2 20h20L12 2z" fill="#ffb74d" />
       <path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00" />
     </svg>
-    <div>
-      <strong id="alert-title" style="display:block;color:#5a3b00;margin-bottom:6px;">Warning</strong>
-      <p id="alert-text" style="margin:0;color:#5b4630;line-height:1.4;">Default text</p>
+    <div class="alert-content">
+      <strong id="alert-title" class="alert-title">Warning</strong>
+      <p id="alert-text" class="alert-text">Default text</p>
     </div>
   </div>
 
   <script>
-    // 1. Grab the URL parameters
+    // Grab the URL parameters
     const params = new URLSearchParams(window.location.search);
-    
-    // 2. Get specific parameters
     const tagParam = params.get('tag');
     const textParam = params.get('text');
 
-    // 3. Apply the 'tag' parameter to the Title
+    // Apply the 'tag' parameter to the Title
     if (tagParam) {
-      // Capitalize the first letter (e.g., 'warning' -> 'Warning')
       const formattedTitle = tagParam.charAt(0).toUpperCase() + tagParam.slice(1);
       document.getElementById('alert-title').innerText = formattedTitle;
     }
 
-    // 4. Apply the 'text' parameter to the Paragraph
+    // Apply the 'text' parameter to the Paragraph
     if (textParam) {
-      // This removes the quotes if you accidentally pass text="Lorem Ipsum" instead of text=Lorem Ipsum
       const cleanText = textParam.replace(/^["']|["']$/g, '');
       document.getElementById('alert-text').innerText = cleanText;
     }
+
+    // 2. Tell MathJax to re-process the page now that the dynamic text is injected
+    // We wrap it in a small timeout/promise just to ensure the DOM is ready and MathJax has loaded
+    window.addEventListener('load', () => {
+      if (window.MathJax) {
+        MathJax.typesetPromise().catch((err) => console.error('MathJax error:', err.message));
+      }
+    });
   </script>
 
 </body>
