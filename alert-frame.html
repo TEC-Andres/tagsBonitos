@@ -95,13 +95,27 @@
       document.getElementById('alert-text').innerText = cleanText;
     }
 
-    // 2. Tell MathJax to re-process the page now that the dynamic text is injected
-    // We wrap it in a small timeout/promise just to ensure the DOM is ready and MathJax has loaded
+    // Function to calculate and send the height to the parent page
+    function sendHeight() {
+      // Get the exact height of the content
+      const height = document.documentElement.scrollHeight;
+      // Send it to the parent window
+      window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
+    }
+
+    // Wait for the page to load, then process MathJax, then send the height
     window.addEventListener('load', () => {
       if (window.MathJax) {
-        MathJax.typesetPromise().catch((err) => console.error('MathJax error:', err.message));
+        MathJax.typesetPromise().then(() => {
+          sendHeight(); // Send height AFTER math renders
+        }).catch((err) => console.error('MathJax error:', err.message));
+      } else {
+        sendHeight(); // Send height immediately if no math
       }
     });
+
+    // Also recalculate height if the user resizes their browser window
+    window.addEventListener('resize', sendHeight);
   </script>
 
 </body>
