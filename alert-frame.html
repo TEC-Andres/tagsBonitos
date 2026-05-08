@@ -3,37 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Tag Component</title>
+  <title>Tags Bonitos Component</title>
+  
   <style>
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: transparent; overflow: hidden; }
+    /* Reset margins so it fits perfectly in the iframe */
+    body { 
+      margin: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: transparent; 
+      overflow: hidden; 
+    }
     
     .alert-container {
-      padding: 16px;
+      /* Dynamic properties handled by JS: border-color, background-color */
+      padding: 16px; /* Increased padding slightly for cleaner long text */
       border-radius: 6px;
       display: flex;
       gap: 12px;
-      align-items: flex-start;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      align-items: flex-start; /* Icon stays at the top */
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Softer shadow */
+      
       border-left-width: 4px;
       border-left-style: solid;
-      transition: all 0.2s ease;
+      
+      transition: background-color 0.15s ease, border-color 0.15s ease; /* Smooth visual loading */
     }
 
-    .alert-icon { flex: 0 0 20px; margin-top: 2px; }
-    .alert-content { flex: 1; min-width: 0; }
-    .alert-title { display: block; margin-bottom: 4px; font-weight: 600; font-size: 1rem; }
-    .alert-text { margin: 0; line-height: 1.6; overflow-wrap: break-word; font-size: 0.95rem; }
+    .alert-icon {
+      flex: 0 0 20px;
+      margin-top: 2px;
+    }
+
+    .alert-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .alert-title {
+      display: block;
+      /* Dynamic property handled by JS: color */
+      margin-bottom: 4px; /* Reduced space below title slightly */
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .alert-text {
+      margin: 0;
+      /* Dynamic property handled by JS: color */
+      line-height: 1.6;
+      overflow-wrap: break-word;
+      font-size: 0.95rem; /* Clean text size */
+    }
   </style>
 
   <script>
-    MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
 </head>
 <body>
 
   <div id="container" class="alert-container">
-    <div id="icon-slot" class="alert-icon"></div>
+    <div id="icon-container" class="alert-icon">
+      </div>
     <div class="alert-content">
       <strong id="alert-title" class="alert-title"></strong>
       <p id="alert-text" class="alert-text"></p>
@@ -41,60 +81,101 @@
   </div>
 
   <script>
-    // 1. Define Theme Configuration
-    const themes = {
-      warning: {
-        border: '#ff9800', bg: '#fff8e1', text: '#5b4630', title: '#5a3b00',
-        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 20h20L12 2z" fill="#ffb74d"/><path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00"/></svg>`
-      },
-      danger: {
-        border: '#f44336', bg: '#ffebee', text: '#611a15', title: '#b71c1c',
-        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#ef5350"/><path d="M11 7h2v7h-2V7zm0 9h2v2h-2v-2z" fill="white"/></svg>`
-      },
+    // 1. DEFINE THE STYLE MAPPING
+    // Add your colors and unique SVG strings here for each tag type.
+    const styleConfig = {
       note: {
-        border: '#2196f3', bg: '#e3f2fd', text: '#1a3a5a', title: '#0d47a1',
-        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#42a5f5"/><path d="M11 11h2v6h-2v-6zm0-4h2v2h-2V7z" fill="white"/></svg>`
+        border: '#2196f3',    // Blue
+        bg: '#e3f2fd',
+        titleColor: '#0d47a1',
+        textColor: '#1a3b59',
+        // Simple 'i' in a circle icon
+        iconSvg: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#2979ff"/><path d="M11 7h2v2h-2zm0 4h2v6h-2z" fill="white"/></svg>'
       },
       comment: {
-        border: '#4caf50', bg: '#e8f5e9', text: '#1b331c', title: '#1b5e20',
-        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12l4 4V4c0-1.1-.9-2-2-2z" fill="#66bb6a"/><path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="white"/></svg>`
+        border: '#4caf50',   // Green
+        bg: '#e8f5e9',
+        titleColor: '#1b5e20',
+        textColor: '#2e4a2e',
+        // Speech bubble icon
+        iconSvg: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .89-2 2v18l4-4h14c1.1 0 2-.89 2-2V4c0-1.11-.9-2-2-2z" fill="#66bb6a"/></svg>'
+      },
+      warning: {
+        border: '#ff9800',  // Orange (Original)
+        bg: '#fff8e1',
+        titleColor: '#5a3b00',
+        textColor: '#5b4630',
+        // Original triangle/exclamation icon
+        iconSvg: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 20h20L12 2z" fill="#ffb74d"/><path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00"/></svg>'
+      },
+      danger: {
+        border: '#f44336',  // Red (New)
+        bg: '#ffebee',
+        titleColor: '#c62828',
+        textColor: '#7f1d1d',
+        // A bold octagon/stop sign exclamation icon
+        iconSvg: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.27 2H15.73L22 8.27V15.73L15.73 22H8.27L2 15.73V8.27L8.27 2Z" fill="#ef5350"/><path d="M11 7h2v7h-2zM11 16h2v2h-2z" fill="white"/></svg>'
       }
     };
 
+    // 2. PARSE THE URL PARAMETERS
     const params = new URLSearchParams(window.location.search);
-    const tag = (params.get('tag') || 'note').toLowerCase();
-    const text = params.get('text') || 'No text provided';
-    const theme = themes[tag] || themes.note; // Fallback to note if tag not found
+    const tagParamRaw = params.get('tag');
+    // Default to 'note' if tag is missing or invalid
+    const tag = (tagParamRaw && styleConfig[tagParamRaw.toLowerCase()]) ? tagParamRaw.toLowerCase() : 'note';
+    const textParam = params.get('text');
 
-    // 2. Apply Theme
+    // 3. APPLY THE STYLES FROM THE MAPPING
+    const config = styleConfig[tag];
     const container = document.getElementById('container');
-    container.style.backgroundColor = theme.bg;
-    container.style.borderLeftColor = theme.border;
-    
-    document.getElementById('icon-slot').innerHTML = theme.svg;
-    
     const titleEl = document.getElementById('alert-title');
-    titleEl.innerText = tag.charAt(0).toUpperCase() + tag.slice(1);
-    titleEl.style.color = theme.title;
-
     const textEl = document.getElementById('alert-text');
-    textEl.innerText = text.replace(/^["']|["']$/g, '');
-    textEl.style.color = theme.text;
+    const iconContainer = document.getElementById('icon-container');
 
-    // 3. Handle Resizing & MathJax
+    // Container Colors
+    container.style.borderLeftColor = config.border;
+    container.style.backgroundColor = config.bg;
+    
+    // Icon
+    iconContainer.innerHTML = config.iconSvg;
+    
+    // Title Text & Color (e.g., 'danger' -> 'Danger')
+    titleEl.innerText = tag.charAt(0).toUpperCase() + tag.slice(1);
+    titleEl.style.color = config.titleColor;
+
+    // Body Text Content & Color
+    if (textParam) {
+      // Basic text cleansing and application
+      const cleanText = textParam.replace(/^["']|["']$/g, '');
+      textEl.innerText = cleanText;
+      textEl.style.color = config.textColor;
+    } else {
+      textEl.innerText = "Provide text with ?text=Lorem%20Ipsum";
+      textEl.style.color = config.textColor;
+    }
+
+    // 4. Handle MathJax Rendering and Iframe Auto-Resizing
     function sendHeight() {
       const height = document.documentElement.scrollHeight;
       window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
     }
 
+    // Process everything after the initial DOM loads
     window.addEventListener('load', () => {
       if (window.MathJax) {
-        MathJax.typesetPromise().then(sendHeight);
+        // Run MathJax, and only calculate height *after* it's finished
+        MathJax.typesetPromise().then(() => {
+          sendHeight();
+        }).catch((err) => console.error('MathJax error:', err.message));
       } else {
+        // If no MathJax, send height immediately
         sendHeight();
       }
     });
+
+    // Also recalculate if the user resizes their window (crucial for mobile wrapping)
     window.addEventListener('resize', sendHeight);
   </script>
+
 </body>
 </html>
