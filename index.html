@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iframe Framework Demo</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; max-width: 600px; margin: auto; }
+    iframe { border: none; width: 100%; height: 90px; margin-bottom: 20px; }
+    .controls { padding: 20px; background: #f4f4f9; border-radius: 8px; border: 1px solid #ddd; }
+    button, input { padding: 8px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+  <h2>Alert Framework Parent</h2>
+
+  <iframe id="alertFrame" src="alert-frame.html"></iframe>
+
+  <div class="controls">
+    <h3>Framework Controls</h3>
+    
+    <button onclick="getIframeText()">Get Text FROM Iframe</button>
+    <p><strong>Extracted Title:</strong> <span id="output-title">None</span></p>
+    <p><strong>Extracted Text:</strong> <span id="output-text">None</span></p>
+
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+
+    <input type="text" id="newTitle" placeholder="Enter new title" value="Critical Error"><br>
+    <input type="text" id="newText" placeholder="Enter new description" value="Database connection failed."><br>
+    <button onclick="setIframeText()">Send Text TO Iframe</button>
+  </div>
+
+  <script>
+    const iframe = document.getElementById('alertFrame');
+
+    // Function to ask the iframe for its text
+    function getIframeText() {
+      iframe.contentWindow.postMessage({ action: 'getText' }, '*');
+    }
+
+    // Function to send new text to the iframe
+    function setIframeText() {
+      const title = document.getElementById('newTitle').value;
+      const text = document.getElementById('newText').value;
+      iframe.contentWindow.postMessage({
+        action: 'setText',
+        title: title,
+        text: text
+      }, '*');
+    }
+
+    // Listen for the response coming back from the iframe
+    window.addEventListener('message', (event) => {
+      if (event.data.action === 'textResponse') {
+        document.getElementById('output-title').innerText = event.data.title;
+        document.getElementById('output-text').innerText = event.data.text;
+      }
+    });
+  </script>
+
+</body>
+</html>

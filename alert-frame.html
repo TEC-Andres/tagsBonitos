@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alert Iframe</title>
+  <style>
+    /* Reset margins so the component sits flush inside the iframe */
+    body { margin: 0; font-family: sans-serif; overflow: hidden; }
+  </style>
+</head>
+<body>
+
+  <div role="alert" aria-label="Warning" style="border-left:4px solid #ff9800;background:#fff8e1;padding:12px;border-radius:6px;display:flex;gap:12px;align-items:flex-start;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex:0 0 20px;margin-top:2px;">
+      <path d="M12 2L2 20h20L12 2z" fill="#ffb74d" />
+      <path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00" />
+    </svg>
+    <div>
+      <strong id="alert-title" style="display:block;color:#5a3b00;margin-bottom:6px;">Warning</strong>
+      <p id="alert-text" style="margin:0;color:#5b4630;line-height:1.4;">Lorem Ipsum</p>
+    </div>
+  </div>
+
+  <script>
+    // Listen for messages from the parent window
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+
+      // Command 1: Update the text in the iframe
+      if (data.action === 'setText') {
+        if (data.title) document.getElementById('alert-title').innerText = data.title;
+        if (data.text) document.getElementById('alert-text').innerText = data.text;
+      } 
+      
+      // Command 2: Send the current text back to the parent
+      else if (data.action === 'getText') {
+        const currentTitle = document.getElementById('alert-title').innerText;
+        const currentText = document.getElementById('alert-text').innerText;
+        
+        // Send the payload back to the parent
+        window.parent.postMessage({
+          action: 'textResponse',
+          title: currentTitle,
+          text: currentText
+        }, '*'); // Note: In a production environment, replace '*' with your specific GitHub Pages domain for security.
+      }
+    });
+  </script>
+
+</body>
+</html>
