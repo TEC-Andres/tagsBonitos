@@ -3,120 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alert Component with MathJax</title>
-  
+  <title>Dynamic Tag Component</title>
   <style>
-    /* Reset margins so it fits perfectly in the iframe */
-    body { 
-      margin: 0; 
-      font-family: system-ui, -apple-system, sans-serif; 
-      background: transparent; 
-    }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: transparent; overflow: hidden; }
     
     .alert-container {
-      border-left: 4px solid #ff9800;
-      background: #fff8e1;
       padding: 16px;
       border-radius: 6px;
       display: flex;
       gap: 12px;
-      /* align-items: flex-start ensures the icon stays at the top for long multi-line texts */
-      align-items: flex-start; 
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      align-items: flex-start;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-left-width: 4px;
+      border-left-style: solid;
+      transition: all 0.2s ease;
     }
 
-    .alert-icon {
-      flex: 0 0 20px;
-      margin-top: 2px;
-    }
-
-    .alert-content {
-      flex: 1;
-      min-width: 0; /* Prevents flexbox from overflowing on long unbroken strings */
-    }
-
-    .alert-title {
-      display: block;
-      color: #5a3b00;
-      margin-bottom: 6px;
-      font-weight: 600;
-      font-size: 1.05rem;
-    }
-
-    .alert-text {
-      margin: 0;
-      color: #5b4630;
-      line-height: 1.6; /* Increased line-height for cleaner reading of long texts */
-      overflow-wrap: break-word; /* Prevents long URLs or formulas from breaking the layout */
-    }
+    .alert-icon { flex: 0 0 20px; margin-top: 2px; }
+    .alert-content { flex: 1; min-width: 0; }
+    .alert-title { display: block; margin-bottom: 4px; font-weight: 600; font-size: 1rem; }
+    .alert-text { margin: 0; line-height: 1.6; overflow-wrap: break-word; font-size: 0.95rem; }
   </style>
 
   <script>
-    MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      },
-      svg: {
-        fontCache: 'global'
-      }
-    };
+    MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }, svg: { fontCache: 'global' } };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-
 </head>
 <body>
 
-  <div class="alert-container" role="alert" aria-label="Warning">
-    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L2 20h20L12 2z" fill="#ffb74d" />
-      <path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00" />
-    </svg>
+  <div id="container" class="alert-container">
+    <div id="icon-slot" class="alert-icon"></div>
     <div class="alert-content">
-      <strong id="alert-title" class="alert-title">Warning</strong>
-      <p id="alert-text" class="alert-text">Default text</p>
+      <strong id="alert-title" class="alert-title"></strong>
+      <p id="alert-text" class="alert-text"></p>
     </div>
   </div>
 
   <script>
-    // Grab the URL parameters
+    // 1. Define Theme Configuration
+    const themes = {
+      warning: {
+        border: '#ff9800', bg: '#fff8e1', text: '#5b4630', title: '#5a3b00',
+        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 20h20L12 2z" fill="#ffb74d"/><path d="M11 9h2v5h-2V9zm0 7h2v2h-2v-2z" fill="#5a3b00"/></svg>`
+      },
+      danger: {
+        border: '#f44336', bg: '#ffebee', text: '#611a15', title: '#b71c1c',
+        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#ef5350"/><path d="M11 7h2v7h-2V7zm0 9h2v2h-2v-2z" fill="white"/></svg>`
+      },
+      note: {
+        border: '#2196f3', bg: '#e3f2fd', text: '#1a3a5a', title: '#0d47a1',
+        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" fill="#42a5f5"/><path d="M11 11h2v6h-2v-6zm0-4h2v2h-2V7z" fill="white"/></svg>`
+      },
+      comment: {
+        border: '#4caf50', bg: '#e8f5e9', text: '#1b331c', title: '#1b5e20',
+        svg: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12l4 4V4c0-1.1-.9-2-2-2z" fill="#66bb6a"/><path d="M7 9h10v2H7V9zm0 4h7v2H7v-2z" fill="white"/></svg>`
+      }
+    };
+
     const params = new URLSearchParams(window.location.search);
-    const tagParam = params.get('tag');
-    const textParam = params.get('text');
+    const tag = (params.get('tag') || 'note').toLowerCase();
+    const text = params.get('text') || 'No text provided';
+    const theme = themes[tag] || themes.note; // Fallback to note if tag not found
 
-    // Apply the 'tag' parameter to the Title
-    if (tagParam) {
-      const formattedTitle = tagParam.charAt(0).toUpperCase() + tagParam.slice(1);
-      document.getElementById('alert-title').innerText = formattedTitle;
-    }
+    // 2. Apply Theme
+    const container = document.getElementById('container');
+    container.style.backgroundColor = theme.bg;
+    container.style.borderLeftColor = theme.border;
+    
+    document.getElementById('icon-slot').innerHTML = theme.svg;
+    
+    const titleEl = document.getElementById('alert-title');
+    titleEl.innerText = tag.charAt(0).toUpperCase() + tag.slice(1);
+    titleEl.style.color = theme.title;
 
-    // Apply the 'text' parameter to the Paragraph
-    if (textParam) {
-      const cleanText = textParam.replace(/^["']|["']$/g, '');
-      document.getElementById('alert-text').innerText = cleanText;
-    }
+    const textEl = document.getElementById('alert-text');
+    textEl.innerText = text.replace(/^["']|["']$/g, '');
+    textEl.style.color = theme.text;
 
-    // Function to calculate and send the height to the parent page
+    // 3. Handle Resizing & MathJax
     function sendHeight() {
-      // Get the exact height of the content
       const height = document.documentElement.scrollHeight;
-      // Send it to the parent window
       window.parent.postMessage({ type: 'resizeIframe', height: height }, '*');
     }
 
-    // Wait for the page to load, then process MathJax, then send the height
     window.addEventListener('load', () => {
       if (window.MathJax) {
-        MathJax.typesetPromise().then(() => {
-          sendHeight(); // Send height AFTER math renders
-        }).catch((err) => console.error('MathJax error:', err.message));
+        MathJax.typesetPromise().then(sendHeight);
       } else {
-        sendHeight(); // Send height immediately if no math
+        sendHeight();
       }
     });
-
-    // Also recalculate height if the user resizes their browser window
     window.addEventListener('resize', sendHeight);
   </script>
-
 </body>
 </html>
