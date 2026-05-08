@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alert Iframe</title>
+  <title>Alert Component</title>
   <style>
-    /* Reset margins so the component sits flush inside the iframe */
-    body { margin: 0; font-family: sans-serif; overflow: hidden; }
+    /* Reset margins so it fits perfectly in the iframe */
+    body { margin: 0; font-family: sans-serif; overflow: hidden; background: transparent; }
   </style>
 </head>
 <body>
@@ -18,34 +18,31 @@
     </svg>
     <div>
       <strong id="alert-title" style="display:block;color:#5a3b00;margin-bottom:6px;">Warning</strong>
-      <p id="alert-text" style="margin:0;color:#5b4630;line-height:1.4;">Lorem Ipsum</p>
+      <p id="alert-text" style="margin:0;color:#5b4630;line-height:1.4;">Default text</p>
     </div>
   </div>
 
   <script>
-    // Listen for messages from the parent window
-    window.addEventListener('message', (event) => {
-      const data = event.data;
+    // 1. Grab the URL parameters
+    const params = new URLSearchParams(window.location.search);
+    
+    // 2. Get specific parameters
+    const tagParam = params.get('tag');
+    const textParam = params.get('text');
 
-      // Command 1: Update the text in the iframe
-      if (data.action === 'setText') {
-        if (data.title) document.getElementById('alert-title').innerText = data.title;
-        if (data.text) document.getElementById('alert-text').innerText = data.text;
-      } 
-      
-      // Command 2: Send the current text back to the parent
-      else if (data.action === 'getText') {
-        const currentTitle = document.getElementById('alert-title').innerText;
-        const currentText = document.getElementById('alert-text').innerText;
-        
-        // Send the payload back to the parent
-        window.parent.postMessage({
-          action: 'textResponse',
-          title: currentTitle,
-          text: currentText
-        }, '*'); // Note: In a production environment, replace '*' with your specific GitHub Pages domain for security.
-      }
-    });
+    // 3. Apply the 'tag' parameter to the Title
+    if (tagParam) {
+      // Capitalize the first letter (e.g., 'warning' -> 'Warning')
+      const formattedTitle = tagParam.charAt(0).toUpperCase() + tagParam.slice(1);
+      document.getElementById('alert-title').innerText = formattedTitle;
+    }
+
+    // 4. Apply the 'text' parameter to the Paragraph
+    if (textParam) {
+      // This removes the quotes if you accidentally pass text="Lorem Ipsum" instead of text=Lorem Ipsum
+      const cleanText = textParam.replace(/^["']|["']$/g, '');
+      document.getElementById('alert-text').innerText = cleanText;
+    }
   </script>
 
 </body>
